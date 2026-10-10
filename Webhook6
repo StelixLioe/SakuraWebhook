@@ -85,7 +85,7 @@ local function getServerInfo()
     local timeStr = successTime and formatTime(tonumber(serverTimeRaw) or 0) or "00:00:00"
     local playerName = LocalPlayer and LocalPlayer.Name or "Unknown"
     
-    return string_format("\n Имя : %s\n Айди сервера: %s\n Время сервера : %s", playerName, idStr, timeStr)
+    return string_format("\nИмя : %s\nАйди сервера: %s\nВремя сервера : %s", playerName, idStr, timeStr)
 end
 
 local function sendWebhook(message, customUrl)
@@ -138,7 +138,7 @@ task.spawn(function()
     if livingFolder then
         local arbiter = livingFolder:WaitForChild("Arbiter", 5)
         if not arbiter then
-            sendWebhook(string_format("Бины нет (Попытка №%d)", hopCount))
+            sendWebhook(string_format("Бины нет (Попытка %d)", hopCount))
             task_wait(0.1)
             serverHop()
             return
