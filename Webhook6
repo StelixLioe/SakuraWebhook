@@ -106,7 +106,7 @@ local function sendWebhook(message, customUrl)
     encoded = nil
 end
 
-sendWebhook(string_format("Перезаход №%d", hopCount))
+sendWebhook(string_format("Перезаход %d", hopCount))
 
 local function serverHop()
     if queueOnTeleport then
