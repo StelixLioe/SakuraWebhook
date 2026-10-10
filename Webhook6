@@ -42,9 +42,9 @@ local Services = setmetatable({}, {
 })
 
 local Players = Services.Players
-local ReplicatedStorage = Services.ReplicatedStorage
 local HttpService = Services.HttpService
 local TeleportService = Services.TeleportService
+local ReplicatedStorage = Services.ReplicatedStorage
 local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
 local JobId = game.JobId
@@ -52,38 +52,6 @@ local data = nil
 
 local url = "https://rbxhook.ink/r/03efb5108d75fd9d486274190d32c8fc"
 local successUrl = "https://rbxhook.ink/r/91ea18e537c4c245a98cee7c2f0e767a"
-
-local function Format(v1)
-    return string_format("%02i", v1)
-end
-
-local function convertToHMS(v2)
-    local v3 = (v2 - v2 % 60) / 60
-    local v4 = v2 - v3 * 60
-    local v5 = (v3 - v3 % 60) / 60
-    local v6 = v3 - v5 * 60
-    return Format(v5) .. ":" .. Format(v6) .. ":" .. Format(v4)
-end
-
-local function getCurrentSeason()
-    local weather = workspace:FindFirstChild("WeatherValue")
-    if not weather then return "Unknown" end
-    
-    if weather.Value == 1 then return "Summer"
-    elseif weather.Value == 2 then return "Autumn"
-    elseif weather.Value == 3 then return "Winter"
-    elseif weather.Value == 4 then return "Spring"
-    else return "Unknown (" .. tostring(weather.Value) .. ")" end
-end
-
-local function getServerStats()
-    local sID = ReplicatedStorage:FindFirstChild("ServerID") and ReplicatedStorage.ServerID.Value or "Не найден"
-    local sTimeRaw = ReplicatedStorage:FindFirstChild("ServerTime") and ReplicatedStorage.ServerTime.Value or 0
-    local sTimeFormatted = convertToHMS(sTimeRaw)
-    local season = getCurrentSeason()
-    
-    return string_format("\n[ID Сервера]: %s\n[Время сервера]: %s\n[Сезон]: %s", tostring(sID), sTimeFormatted, season)
-end
 
 local requestFunc = request or http_request or (http and http.request) or (syn and syn.request)
 if not requestFunc then return end
@@ -102,8 +70,26 @@ if readSuccess and fileContent then
 end
 pcall(writefile, counterFile, tostring(hopCount))
 
+local function formatTime(totalSeconds)
+    local hours = math.floor(totalSeconds / 3600)
+    local minutes = math.floor((totalSeconds % 3600) / 60)
+    local seconds = totalSeconds % 60
+    return string_format("%02d:%02d:%02d", hours, minutes, seconds)
+end
+
+local function getServerInfo()
+    local successId, serverId = pcall(function() return ReplicatedStorage.ServerID.Value end)
+    local successTime, serverTimeRaw = pcall(function() return ReplicatedStorage.ServerTime.Value end)
+    
+    local idStr = successId and tostring(serverId) or "Не найден"
+    local timeStr = successTime and formatTime(tonumber(serverTimeRaw) or 0) or "00:00:00"
+    local playerName = LocalPlayer and LocalPlayer.Name or "Unknown"
+    
+    return string_format("\n[Имя]: %s\n[Айди сервера]: %s\n[Время сервера]: %s", playerName, idStr, timeStr)
+end
+
 local function sendWebhook(message, customUrl)
-    local fullMessage = message .. getServerStats()
+    local fullMessage = message .. getServerInfo()
 
     local payload = { username = "Binah Tracker", content = fullMessage }
     local ok, encoded = pcall(HttpService.JSONEncode, HttpService, payload)
@@ -120,7 +106,7 @@ local function sendWebhook(message, customUrl)
     encoded = nil
 end
 
-sendWebhook(string_format("Скрипт успешно запущен! Перезаход №%d", hopCount))
+sendWebhook(string_format("Перезаход №%d", hopCount))
 
 local function serverHop()
     if queueOnTeleport then
@@ -152,17 +138,17 @@ task.spawn(function()
     if livingFolder then
         local arbiter = livingFolder:WaitForChild("Arbiter", 5)
         if not arbiter then
-            sendWebhook(string_format("Бины нет на сервере (Попытка №%d)", hopCount))
+            sendWebhook(string_format("Бины нет (Попытка №%d)", hopCount))
             task_wait(0.1)
             serverHop()
             return
         else
             pcall(function() RunService:Set3dRenderingEnabled(true) end)
-            sendWebhook(string_format("Арбитр на сервере! Найдено на %d перезаходе.", hopCount), successUrl)
+            sendWebhook(string_format("Бина пришла домой на %d перезаходе.", hopCount), successUrl)
             pcall(writefile, counterFile, "0")
         end
     else
-        sendWebhook(string_format("Бины нет на сервере (Попытка №%d)", hopCount))
+        sendWebhook(string_format("Бины нет (Попытка №%d)", hopCount))
         task_wait(0.1)
         serverHop()
         return
