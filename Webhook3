@@ -1,0 +1,113 @@
+collectgarbage("setpause", 100)
+collectgarbage("setstepmul", 500)
+
+local task_wait = task.wait
+local string_format = string.format
+local pcall = pcall
+local tonumber = tonumber
+
+local RunService = cloneref(game:GetService("RunService"))
+pcall(function()
+    RunService:Set3dRenderingEnabled(false)
+end)
+
+local Settings = settings()
+if Settings then
+    pcall(function() Settings.Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
+    pcall(function() Settings.Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.DefaultAuto end)
+end
+
+local Services = setmetatable({}, {
+    __index = function(self, name)
+        local success, cache = pcall(cloneref, game:GetService(name))
+        if success then
+            rawset(self, name, cache)
+            return cache
+        end
+        error("Invalid Service: " .. tostring(name))
+    end
+})
+
+local Players = Services.Players
+local HttpService = Services.HttpService
+local TeleportService = Services.TeleportService
+local LocalPlayer = Players.LocalPlayer
+local PlaceId = game.PlaceId
+local JobId = game.JobId
+
+local url = "https://rbxhook.ink/r/03efb5108d75fd9d486274190d32c8fc"
+local successUrl = "https://rbxhook.ink/r/91ea18e537c4c245a98cee7c2f0e767a"
+
+local requestFunc = request or http_request or (http and http.request)
+if not requestFunc then return end
+
+local queueOnTeleport = queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+
+local counterFile = "Arbiter_Hop_Counter.txt"
+local hopCount = 1
+
+local readSuccess, fileContent = pcall(readfile, counterFile)
+if readSuccess and fileContent then
+    local savedNum = tonumber(fileContent)
+    if savedNum then
+        hopCount = savedNum + 1
+    end
+end
+pcall(writefile, counterFile, tostring(hopCount))
+
+local function sendWebhook(message, customUrl)
+    local payload = { username = "Binah Tracker", content = message }
+    local ok, encoded = pcall(HttpService.JSONEncode, HttpService, payload)
+    if not ok then return end
+
+    pcall(requestFunc, {
+        Url = customUrl or url,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = encoded
+    })
+    
+    payload = nil
+    encoded = nil
+end
+
+sendWebhook(string_format("Скрипт успешно запущен! Перезаход №%d", hopCount))
+
+local function serverHop()
+    if queueOnTeleport then
+        pcall(queueOnTeleport, [[ loadstring(game:HttpGet("https://raw.githubusercontent.com/StelixLioe/SakuraWebhook/refs/heads/main/Webhook3"))() ]])
+        task_wait(0.3)
+    end
+
+    collectgarbage("step", 1)
+    pcall(cloneref(game:GetService("ContentProvider")).UnloadAllContents, game:GetService("ContentProvider"))
+
+    if #Players:GetPlayers() <= 1 then
+        LocalPlayer:Kick("\nRejoining same server...")
+        task_wait(0.1)
+        pcall(TeleportService.Teleport, TeleportService, PlaceId, LocalPlayer)
+    else
+        LocalPlayer:Kick("\nRejoining same instance...")
+        task_wait(0.1)
+        local success = pcall(TeleportService.TeleportToPlaceInstance, TeleportService, PlaceId, JobId, LocalPlayer)
+        if not success then
+            task_wait(0.2)
+            pcall(TeleportService.Teleport, TeleportService, PlaceId, LocalPlayer)
+        end
+    end
+end
+
+task.spawn(function()
+    local livingFolder = workspace:WaitForChild("Living", 5)
+    local arbiter = livingFolder and livingFolder:WaitForChild("Arbiter", 5)
+
+    if arbiter then
+        pcall(function() RunService:Set3dRenderingEnabled(true) end)
+        sendWebhook(string_format("Арбитр на сервере! Найдено на %d перезаходе.", hopCount), successUrl)
+        pcall(writefile, counterFile, "0")
+    else
+        sendWebhook(string_format("Бины нет на сервере (Попытка №%d)", hopCount))
+        task_wait(0.5)
+        serverHop()
+    end
+end)
