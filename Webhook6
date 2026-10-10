@@ -118,7 +118,7 @@ task.spawn(function()
         local arbiter = livingFolder:WaitForChild("Arbiter", 5)
         if not arbiter then
             sendWebhook(string_format("Бины нет на сервере (Попытка №%d)", hopCount))
-            task_wait(1)
+            task_wait(0.1)
             serverHop()
             return
         else
